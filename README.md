@@ -15,20 +15,24 @@ go version go1.23.3 linux/amd64
 ## How to run
 Inside the *forecaster* directory, execute:
 
-```
+```console
 go run ./...
 ```
 
 ## How to test
 With curl:
-```
+```console
 curl --header "Content-Type: application/json" --data '{"latitude":39.7456,"longitude":-97.0892}' http://localhost:8080/forecast
+```
+```console
 Sunny and cold temperature
 ```
 
 With HTTPie:
-```
+```console
 http POST http://localhost:8080/forecast latitude:=39.7456 longitude:=-97.0892
+```
+```console
 HTTP/1.1 200 OK
 Content-Length: 27
 Content-Type: text/plain; charset=utf-8

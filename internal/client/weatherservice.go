@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var ErrForecastGridDataNotFound = errors.New("forecastGridData not available for given coordinates")
+
 type WeatherServiceClient interface {
 	GetGridForecastUrl(latitude float64, longitude float64) (string, error)
 	GetForecast(gridForecastUrl string) (string, float64, error)
@@ -57,7 +59,7 @@ func (c Client) GetForecast(gridForecastUrl string) (string, float64, error) {
 	if !ok {
 		return "", 0, errors.New("periods field is missing in properties")
 	}
-	
+
 	shortForecast := fmt.Sprint(firstPeriod["shortForecast"])
 	temperature, ok := firstPeriod["temperature"].(float64)
 	if !ok {
@@ -81,6 +83,10 @@ func (c Client) GetGridForecastUrl(latitude float64, longitude float64) (string,
 		log.Println(err)
 		return "", err
 	}
+	if res.StatusCode == http.StatusNotFound {
+		log.Println("GET", url, "returned 404")
+		return "", ErrForecastGridDataNotFound
+	}
 
 	var result map[string]any
 	decoder := json.NewDecoder(res.Body)
@@ -92,7 +98,8 @@ func (c Client) GetGridForecastUrl(latitude float64, longitude float64) (string,
 
 	forecastGridDataUrl, ok := result["properties"].(map[string]any)["forecastGridData"].(string)
 	if !ok {
-		return "", errors.New("forecastGridData field is missing in properties")
+		log.Println("GET", url, "result is missing forecastGridData in properties")
+		return "", ErrForecastGridDataNotFound
 	}
 
 	return forecastGridDataUrl, nil
