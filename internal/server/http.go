@@ -79,6 +79,7 @@ func (h HttpServer) handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("error occurred:", err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
