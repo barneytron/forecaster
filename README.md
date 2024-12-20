@@ -7,8 +7,6 @@ The endpoint /forecast accepts a POST request having latitude and longitude coor
 
 The server is hardcoded to listen on port 8080.
 
-No third party Go packages were used in this project.
-
 ## Requirements
 go version go1.23.3 linux/amd64
 

@@ -13,6 +13,7 @@ import (
 
 func main() {
 	weatherServiceClient := client.NewWeatherServiceClient()
-	httpServer := server.NewHttpServer(weatherServiceClient)
+	weatherServiceHandler := server.NewHttpHandler(weatherServiceClient)
+	httpServer := server.NewHttpServer(weatherServiceHandler)
 	httpServer.Start()
 }
