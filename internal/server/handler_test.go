@@ -28,7 +28,7 @@ type HandlerTest struct {
 	suite.Suite
 }
 
-func TestHandlerAdapter(t *testing.T) {
+func TestHandlerSuite(t *testing.T) {
 	suite.Run(t, new(HandlerTest))
 }
 
