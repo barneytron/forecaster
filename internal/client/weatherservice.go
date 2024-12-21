@@ -9,7 +9,29 @@ import (
 	"time"
 )
 
+type PointMetadata struct {
+	PointMetaDataProperties `json:"properties"`
+}
+
+type PointMetaDataProperties struct {
+	ForecastGridData string `json:"forecastGridData"`
+}
+
+type Forecast struct {
+	ForecastProperties `json:"properties"`
+}
+
+type ForecastProperties struct {
+	Periods []Period `json:"periods"`
+}
+
+type Period struct {
+	ShortForecast string  `json:"shortForecast"`
+	Temperature   float64 `json:"temperature"`
+}
+
 var ErrForecastGridDataNotFound = errors.New("forecastGridData not available for given coordinates")
+var ErrForecastGridDataMissing = errors.New("forecastGridData is missing in result")
 
 type WeatherServiceGetter interface {
 	GetGridForecastUrl(latitude float64, longitude float64) (string, error)
@@ -45,24 +67,20 @@ func (c Client) GetForecast(gridForecastUrl string) (string, float64, error) {
 	}
 	defer res.Body.Close()
 
-	var result map[string]any
-
+	var forecast Forecast
 	decoder := json.NewDecoder(res.Body)
-	err = decoder.Decode(&result)
+	err = decoder.Decode(&forecast)
 	if err != nil {
 		return "", 0, fmt.Errorf("[httpClient.Do] error: %w", err)
 	}
 
-	firstPeriod, ok := result["properties"].(map[string]any)["periods"].([]any)[0].(map[string]any)
-	if !ok {
+	if len(forecast.ForecastProperties.Periods) == 0 {
 		return "", 0, errors.New("periods field is missing in properties")
 	}
 
-	shortForecast := fmt.Sprint(firstPeriod["shortForecast"])
-	temperature, ok := firstPeriod["temperature"].(float64)
-	if !ok {
-		return "", 0, errors.New("forecastGridData field is missing in properties")
-	}
+	firstPeriod := forecast.ForecastProperties.Periods[0]
+	shortForecast := firstPeriod.ShortForecast
+	temperature := firstPeriod.Temperature
 
 	return shortForecast, temperature, nil
 }
@@ -87,17 +105,17 @@ func (c Client) GetGridForecastUrl(latitude float64, longitude float64) (string,
 		return "", ErrForecastGridDataNotFound
 	}
 
-	var result map[string]any
+	var pointMetadata PointMetadata
 	decoder := json.NewDecoder(res.Body)
-	err = decoder.Decode(&result)
+	err = decoder.Decode(&pointMetadata)
 	if err != nil {
 		return "", fmt.Errorf("[Decode] error: %w", err)
 	}
 
-	forecastGridDataUrl, ok := result["properties"].(map[string]any)["forecastGridData"].(string)
-	if !ok {
-		log.Println("GET", url, "result is missing forecastGridData in properties")
-		return "", ErrForecastGridDataNotFound
+	forecastGridDataUrl := pointMetadata.PointMetaDataProperties.ForecastGridData
+	if forecastGridDataUrl == "" {
+		log.Println("GET", url, "result is missing forecastGridData")
+		return "", ErrForecastGridDataMissing
 	}
 
 	return forecastGridDataUrl, nil
